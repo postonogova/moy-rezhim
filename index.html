@@ -96,6 +96,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--lamp);outline-o
       <label class="timeedit" for="mirtTime">Время<input type="time" id="mirtTime"></label>
     </div>
     <div class="streak" id="streak"></div>
+    <div class="list" id="evening"></div>
   </section>
 
   <section class="section">
@@ -144,9 +145,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--lamp);outline-o
 <script>
 (function(){
 const KEY="moy-rezhim-v1";
-const MORNING=[{k:"morning",n:"Нексиум + Необутин",s:"натощак, сразу после подъёма"},{k:"elkar1",n:"Элькар",s:"с завтраком"},{k:"selank",n:"Селанк",s:"капли"}];
-const DAYTIME=[{k:"neob2",n:"Необутин",s:"перед обедом или ужином"},{k:"elkar2",n:"Элькар",s:"с едой, до 17:00"},{k:"pepsan",n:"Пепсан-Р",s:"через час после еды"}];
-const ALLMEDS=[...MORNING,...DAYTIME];
+const MORNING=[{k:"morning",n:"Нексиум + Необутин",s:"натощак, сразу после подъёма"},{k:"elkar1",n:"Элькар",s:"с завтраком"},{k:"selank",n:"Селанк",s:"капли"},{k:"pepsan",n:"Пепсан-Р",s:"через час после завтрака"}];
+const DAYTIME=[{k:"neob2",n:"Необутин",s:"перед обедом или ужином"},{k:"elkar2",n:"Элькар",s:"с едой, до 17:00"},{k:"pepsan2",n:"Пепсан-Р",s:"через час после обеда"}];
+const EVENING=[{k:"pepsan3",n:"Пепсан-Р",s:"через час после ужина"}];
+const ALLMEDS=[...MORNING,...DAYTIME,...EVENING];
 const MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const WDL=["воскресенье","понедельник","вторник","среда","четверг","пятница","суббота"];
 const WD=["вс","пн","вт","ср","чт","пт","сб"];
@@ -178,6 +180,7 @@ if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().cat
 function rows(list){return list.map(m=>`<div class="row"><div class="name">${m.n}<small>${m.s}</small></div><button type="button" class="tick" data-med="${m.k}" aria-pressed="false" aria-label="${m.n}">✓</button></div>`).join("")}
 $("morning").innerHTML=`<div class="row"><div class="name">Проснулся и встал<small>время можно поправить ниже</small></div><button type="button" class="stamp" id="upNow2">Встал</button></div>`+rows(MORNING);
 $("daytime").innerHTML=rows(DAYTIME);
+$("evening").innerHTML=rows(EVENING);
 $("mood").innerHTML=[1,2,3,4,5].map(n=>`<button type="button" data-mood="${n}" aria-pressed="false">${n}</button>`).join("");
 
 /* render */
@@ -262,8 +265,8 @@ function csvCell(v){v=v==null?"":String(v);return /[";\n\r]/.test(v)?'"'+v.repla
 $("csvBtn").addEventListener("click",()=>{
   const list=Object.values(days).filter(hasData).sort((a,b)=>a.date.localeCompare(b.date));
   if(!list.length){$("backupMsg").textContent="Пока нечего сохранять: нет ни одной записи.";return}
-  const head=["Дата","День недели","Проснулся","Лёг (вечером этого дня)","Нексиум + Необутин","Элькар 1","Селанк","Необутин 2","Элькар 2","Пепсан-Р","Миртазапин","Время миртазапина","Оценка дня (1–5)","Что было хорошего"];
-  const order=["morning","elkar1","selank","neob2","elkar2","pepsan"];
+  const head=["Дата","День недели","Проснулся","Лёг (вечером этого дня)","Нексиум + Необутин","Элькар 1","Селанк","Необутин 2","Элькар 2","Пепсан-Р (завтрак)","Пепсан-Р (обед)","Пепсан-Р (ужин)","Миртазапин","Время миртазапина","Оценка дня (1–5)","Что было хорошего"];
+  const order=["morning","elkar1","selank","neob2","elkar2","pepsan","pepsan2","pepsan3"];
   const lines=[head.map(csvCell).join(";")];
   list.forEach(r=>{const d=parse(r.date);lines.push([pad(d.getDate())+"."+pad(d.getMonth()+1)+"."+d.getFullYear(),WD[d.getDay()],r.up||"",r.bed||"",...order.map(k=>r.meds&&r.meds[k]?"да":""),r.meds&&r.meds.mirt?"да":"",r.mirtTime||"",r.mood||"",r.good||""].map(csvCell).join(";"))});
   download("мой-режим-"+logicalToday()+".csv","﻿"+lines.join("\r\n"),"text/csv;charset=utf-8");
